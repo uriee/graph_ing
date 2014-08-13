@@ -1,0 +1,129 @@
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+        <title>(CC)</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="http://code.jquery.com/jquery-1.11.1.js"></script>
+    <script type="text/javascript" src="vivagraph.min.js" ></script>
+      
+        <script type='text/javascript'>
+            /*global Viva*/
+
+           function beginRemoveNodesLoop(graph,terms){
+             console.log("inbeginRemoveNodesLoop1",graph,terms);
+               var nodesLeft = [];
+               graph.forEachNode(function(node){
+                   nodesLeft.push(node.id);
+               });
+               var removeInterval = setInterval(function(){
+                    var nodesCount = nodesLeft.length;
+                    if (nodesCount > 0){
+                        var nodeToRemove = Math.min((Math.random() * nodesCount) << 0, nodesCount - 1);
+
+                        graph.removeNode(nodesLeft[nodeToRemove]);
+                        nodesLeft.splice(nodeToRemove, 1);
+                    }
+                 console.log("inbeginRemoveNodesLoopXXX",nodesCount,graph,terms);
+                    if (nodesCount === 0) {
+                        clearInterval(removeInterval);
+                        setTimeout(function(){
+                            addNodes(graph,terms);
+                        }, 50);
+                    }
+                }, 50);
+           }
+
+          function addNodes(graph,terms,term){
+             console.log("in beginAddNodesLoop",terms,graph)
+                  if(terms) {
+                   console.log("in terms",terms,terms.length);
+                    for (var i = 0; i < terms.length; i++) {
+                      if (term != terms[i]) {
+                        console.log("addLink",term,terms[i])
+                        graph.addLink(term,terms[i]);
+                      }
+                    }
+                  }
+           };
+
+           function onLoad() {
+           graph = Viva.Graph.graph();
+var graphics = Viva.Graph.View.svgGraphics(),
+    nodeSize = 24;
+graphics.node(function(node) {
+  var ui = Viva.Graph.svg('g'),
+      svgText = Viva.Graph.svg('text').attr('y', '-4px').text(node.id);
+      src = '';
+  
+    domImg = new Image();
+    domImg.onload = function () {        
+
+        svgText.text(node.id);
+    };
+    domImg.src = src;
+    ui.append(svgText);
+    return ui;
+}).placeNode(function(nodeUI, pos) {
+    nodeUI.attr('transform', 
+                'translate(' + 
+                      (pos.x - nodeSize) + ',' + (pos.y - nodeSize/2+20) + 
+                ')');
+}); 
+var renderer = Viva.Graph.View.renderer(graph, {
+        graphics : graphics
+    });
+renderer.run();
+      
+           }
+        </script>
+        <style type='text/css'>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body { font: 13px Helvetica, Arial; }
+      form { background: #FFF; padding: 3px; position: fixed; bottom: 0; width: 100%; }
+      form input { border: 0; padding: 10px; width: 30%; margin-right: .5%; }
+      form button { width: 30%; background: rgb(130, 224, 255); border: none; padding: 10px; }
+       
+body, html, svg {
+    width: 100%;
+    height:100%;
+    padding: 0;
+    margin:0
+}
+ </style>
+</head>
+<body onload="onLoad()" style="background-color: pink;">
+    <div id='graph'></div>
+    <form action="">
+      user:<input id="user" autocomplete="off" />
+      term:<input id="term" autocomplete="off" />
+      <button>Send</button>
+    </form>
+    <script>
+      var socket = io();
+  $('form').on('submit', function(e) {
+    e.preventDefault(); //   
+        ret = {};
+        ret.user = $('#user').val();
+        ret.term = $('#term').val();
+        socket.emit('addTerm', JSON.stringify(ret));
+        socket.emit('fetch', ret.user);        
+        console.log(ret,JSON.stringify(ret))
+        $('#user').val('');
+        $('#term').val('');
+        return false;
+  });
+      socket.on('addTerm', function(msg){
+        console.log("added term",msg);
+      });
+      socket.on('fetch', function(msg){
+        console.log("massage",msg);
+        var inp  = JSON.parse(msg);
+        var terms = inp.terms;
+        var user = inp.user;
+        addNodes(graph,terms,user);
+        console.log("got terms:",terms,user);
+      })      
+      
+    </script>  
+</body>
+</html>

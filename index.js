@@ -53,7 +53,7 @@ io.on('connection', function(socket){
       out = {}
       out.terms = data;
       out.user = key;
-      socket.emit('fetch', JSON.stringify(out));
+      io.emit('fetch', JSON.stringify(out));
     });
   });
 });
